@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows.Input;
@@ -18,6 +18,12 @@ namespace WindowsFormsApp8
         public Cells c = new Cells();
         
         public List<Items> items = new List<Items>();
+        public Player p = new Player();
+        public AI_Player ai = new AI_Player();
+        public Behaviour bb = new Behaviour();
+
+        Rectangle rect = new Rectangle(0, 0, 50, 50);
+        Rectangle rect2 = new Rectangle(0, 0, 50, 50);
 
 
 
@@ -28,21 +34,15 @@ namespace WindowsFormsApp8
             Paint += new PaintEventHandler(DrawCells);
             Paint += new PaintEventHandler(DrawPlayer);
             Paint += new PaintEventHandler(DrawItems);
+            Paint += new PaintEventHandler(DrawAI_Player);
 
             GenerateItems();
-
-
-
-
 
         }
 
         public void GenerateItems()
         {
             Random r = new Random();
-
-            
-
 
             while (items.Count != 3)
             {
@@ -52,19 +52,22 @@ namespace WindowsFormsApp8
                 items.Add(prize);
             }
 
-
+            
 
         }
-
 
         public void UpdatePos()
         {
             label1.Text = p.xpos.ToString();
             label2.Text = p.ypos.ToString();
+            
         }
 
         public void UpdateScore()
         {
+            label3.Text = "0";
+            
+
             foreach (Items item in items)
             {
                 if (item.xpoint == rect.X && item.ypoint == rect.Y)
@@ -79,17 +82,23 @@ namespace WindowsFormsApp8
                     p.score += 0;
 
                 }
-
+                CheckGameState();
 
             }
+            
 
         }
 
         public  void CheckGameState()
         {
-            if (p.score == items.Sum(c => c.amount))
+            if (p.score == items.Sum(c => c.amount) || p.score > ai.score && items.Sum(c => c.amount) == 0)
             {
                 MessageBox.Show("You win!");
+            }
+            else if (ai.score == items.Sum(c => c.amount) || ai.score > p.score && items.Sum(c => c.amount) ==0)
+            {
+                MessageBox.Show("AI wins!");
+               
             }
         }
 
@@ -110,16 +119,6 @@ namespace WindowsFormsApp8
 
         }
 
-        public Player p = new Player();
-
-        
-
-        Rectangle rect = new Rectangle(0, 0, 50, 50);
-
-        
-
-
-
         private void DrawPlayer(Object sender, PaintEventArgs e)
         {
 
@@ -128,9 +127,10 @@ namespace WindowsFormsApp8
 
         }
 
-
-
-
+        private void DrawAI_Player(Object sender, PaintEventArgs e)
+        {
+            e.Graphics.DrawRectangle(new Pen(Color.Green, 3), rect2);
+        }
 
         private void DrawItems(Object sender, PaintEventArgs e)
         {
@@ -138,15 +138,80 @@ namespace WindowsFormsApp8
             {
                 e.Graphics.DrawEllipse(new Pen(Color.Blue, 3), item.xpoint, item.ypoint, 50, 50);
 
-               
-
             }
 
-            
+        }
+
+        public  void AIMove()
+        {
+            bool PlayerMove = HasMoved(rect.X, rect.Y);
+
+            items.Sort((a, b) => b.amount.CompareTo(a.amount));
+
+            //Sorts the randomized prize value list to determine the most valuable prize. 
+
+            int g = 0;
+            int t = 0;
+
+            var prime = items.ElementAt(g);
+
+            //Checks which item is at the top of the stack in terms of amount and goes towards that item.
+
+
+            if (PlayerMove == true)
+            {
+                t++;
+            }
+            // Checks if the human player has moved yet, if not AI does not move.
+
+
+
+            while (t == 1 && g < items.Count){
+                
+                    if (rect2.X < prime.xpoint && rect2.X + 50 != 400)
+                    {
+                        rect2.X += 50;
+                        t--;
+
+                    }
+                    if (rect2.X > prime.xpoint && rect2.X - 50 >= 0)
+                    {
+                        rect2.X -= 50;
+                        t--;
+                    }
+                    if (rect2.Y < prime.ypoint && rect2.Y + 50 != 400)
+                    {
+                        rect2.Y += 50;
+                        t--;
+                    }
+                    if (rect2.Y > prime.ypoint && rect2.Y - 50 >= 0)
+                    {
+                        rect2.Y -= 50;
+                        t--;
+                    }
+
+                    if (rect2.X == prime.xpoint && rect2.Y == prime.ypoint)
+                    {
+                    ai.score += prime.amount;
+                    prime.amount = 0;
+                    label4.Text = ai.score.ToString();
+                    g += 1;
+              // When the AI score equals the amount of item g g is incremented by one to begin moving towards the next item in the stack.
+                    }
+
+            }
 
 
         }
 
+        public bool HasMoved(int x, int y) 
+        {
+            if(x != 0 || y != 0)
+            {
+                return true;
+            }
+            return false; 
+        }
 
         private void MoveUp(Object sender, EventArgs e)
         {
@@ -161,13 +226,14 @@ namespace WindowsFormsApp8
                 rect.X += 0;
                 rect.Y -= 50;
             }
-            
-            p.xpos = rect.X;
-            p.ypos = rect.Y;
+
+            p.MoveUp();
 
             UpdateScore();
 
             UpdatePos();
+
+            AIMove();
 
             Refresh();
 
@@ -186,12 +252,12 @@ namespace WindowsFormsApp8
                 rect.X += 0;
                 rect.Y += 50;
             }
+
+            p.MoveDown();
             
-            p.xpos = rect.X;
-            p.ypos = rect.Y;
             UpdateScore();
             UpdatePos();
-
+            AIMove();
             Refresh();
         }
 
@@ -208,9 +274,10 @@ namespace WindowsFormsApp8
                 rect.Y += 0;
             }
 
-            
-            p.xpos = rect.X;
-            p.ypos = rect.Y;
+
+            p.MoveLeft();
+
+            AIMove();
             UpdateScore();
             UpdatePos();
             Refresh();
@@ -229,9 +296,8 @@ namespace WindowsFormsApp8
                 rect.Y += 0;
             }
 
-            
-            p.xpos = rect.X;
-            p.ypos = rect.Y;
+            p.MoveRight();
+            AIMove();
             UpdateScore();
             UpdatePos();
             Refresh();
