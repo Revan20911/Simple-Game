@@ -147,16 +147,29 @@ namespace WindowsFormsApp8
             bool PlayerMove = HasMoved(rect.X, rect.Y);
 
             items.Sort((a, b) => b.amount.CompareTo(a.amount));
+            var distance = Math.Sqrt((Math.Pow(item.xpoint - Rect.X, 2) + Math.Pow(item.ypoint - Rect.Y, 2)));
+            double[] averages = new double[]{};
 
+            foreach(Items object in items){
+                for(int i = 0; i < items.count; i++){
+                averages[i] = object.amount*1 - object.Distance()*1.5;
+                i++;
+             }
+                Array.Sort(averages);
+               
+            }
+            
             //Sorts the randomized prize value list to determine the most valuable prize. 
 
             int g = 0;
             int t = 0;
 
-            var prime = items.ElementAt(g);
+            var prime = items.ElementAt(items.FindIndexOf(c => c.amount*1 - c.Distance()*1.5 == averages.Max()));
 
             //Checks which item is at the top of the stack in terms of amount and goes towards that item.
+            
 
+            
 
             if (PlayerMove == true)
             {
